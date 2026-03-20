@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎙️ RealtimeEdgeTTS Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        h3 { color: #667eea; margin-bottom: 15px; }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        textarea, select, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+        textarea:focus, select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        textarea { min-height: 120px; resize: vertical; }
+        .range-container { margin-bottom: 15px; }
+        .range-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .range-value {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #555;
+        }
+        .status-bar {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #bbdefb;
+        }
+        .status-item:last-child { border-bottom: none; }
+        .log {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .log-entry { margin-bottom: 4px; }
+        .log-time { color: #667eea; margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🎙️ RealtimeEdgeTTS - Ultra-Fast Demo</h1>
+    
+    <div class="container">
+        <div class="section">
+            <h3>📝 Text</h3>
+            <textarea id="text-input" placeholder="Gib hier deinen Text ein...">Hallo! Dies ist ein Test für das ultra-schnelle Realtime-Streaming mit Caching.</textarea>
+        </div>
+
+        <div class="section">
+            <h3>🎤 Stimme</h3>
+            <select id="voice-select">
+                <option value="de-DE-ConradNeural">Deutsch - Conrad (Männlich)</option>
+                <option value="de-DE-KatjaNeural">Deutsch - Katja (Weiblich)</option>
+                <option value="de-DE-AmalaNeural">Deutsch - Amala (Weiblich)</option>
+                <option value="en-US-GuyNeural">English - Guy (Männlich)</option>
+                <option value="en-US-JennyNeural">English - Jenny (Weiblich)</option>
+                <option value="fr-FR-HenriNeural">Französisch - Henri (Männlich)</option>
+                <option value="es-ES-AlvaroNeural">Spanisch - Alvaro (Männlich)</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <h3>⚙️ Einstellungen</h3>
+            
+            <div class="range-container">
+                <div class="range-header">
+                    <label for="rate">Geschwindigkeit</label>
+                    <span class="range-value" id="rate-value">+0%</span>
+                </div>
+                <input type="range" id="rate" min="-100" max="100" value="0" step="10">
+            </div>
+
+            <div class="range-container">
+                <div class="range-header">
+                    <label for="volume">Lautstärke</label>
+                    <span class="range-value" id="volume-value">+0%</span>
+                </div>
+                <input type="range" id="volume" min="-100" max="100" value="0" step="10">
+            </div>
+
+            <div class="range-container">
+                <div class="range-header">
+                    <label for="pitch">Tonhöhe</label>
+                    <span class="range-value" id="pitch-value">+0Hz</span>
+                </div>
+                <input type="range" id="pitch" min="-100" max="100" value="0" step="10">
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-primary" id="play-btn">▶️ Abspielen</button>
+            <button class="btn-secondary" id="stop-btn" disabled>⏹️ Stoppen</button>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-label">Status:</span>
+                <span class="status-value" id="status">Bereit</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Cache:</span>
+                <span class="status-value" id="cache-status">--</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Dauer:</span>
+                <span class="status-value" id="duration">0.00s</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Bytes:</span>
+                <span class="status-value" id="bytes">0</span>
+            </div>
+        </div>
+
+        <div class="log" id="log">
+            <div class="log-entry"><span class="log-time">[00:00.000]</span> System bereit...</div>
+        </div>
+    </div>
+
+    <script>
+        let isPlaying = false;
+        let audioChunks = [];
+        let startTime = null;
+        let totalBytes = 0;
+        let isFirstChunk = true;
+        let mediaSource = null;
+        let sourceBuffer = null;
+
+        const textInput = document.getElementById('text-input');
+        const voiceSelect = document.getElementById('voice-select');
+        const rateSlider = document.getElementById('rate');
+        const volumeSlider = document.getElementById('volume');
+        const pitchSlider = document.getElementById('pitch');
+        const playBtn = document.getElementById('play-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const statusEl = document.getElementById('status');
+        const cacheStatusEl = document.getElementById('cache-status');
+        const durationEl = document.getElementById('duration');
+        const bytesEl = document.getElementById('bytes');
+        const logEl = document.getElementById('log');
+
+        // Update slider values
+        rateSlider.addEventListener('input', () => {
+            const val = rateSlider.value >= 0 ? `+${rateSlider.value}%` : `${rateSlider.value}%`;
+            document.getElementById('rate-value').textContent = val;
+        });
+        volumeSlider.addEventListener('input', () => {
+            const val = volumeSlider.value >= 0 ? `+${volumeSlider.value}%` : `${volumeSlider.value}%`;
+            document.getElementById('volume-value').textContent = val;
+        });
+        pitchSlider.addEventListener('input', () => {
+            const val = pitchSlider.value >= 0 ? `+${pitchSlider.value}Hz` : `${pitchSlider.value}Hz`;
+            document.getElementById('pitch-value').textContent = val;
+        });
+
+        function addLog(message) {
+            const now = new Date();
+            const timeStr = now.toISOString().substr(14, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${timeStr}]</span>${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        playBtn.addEventListener('click', async () => {
+            if (isPlaying) return;
+            const text = textInput.value.trim();
+            if (!text) {
+                alert('Bitte gib einen Text ein!');
+                return;
+            }
+
+            isPlaying = true;
+            audioChunks = [];
+            totalBytes = 0;
+            startTime = Date.now();
+            isFirstChunk = true;
+
+            playBtn.disabled = true;
+            stopBtn.disabled = false;
+            statusEl.textContent = '⚡ Startet...';
+            cacheStatusEl.textContent = '...';
+
+            addLog(`▶️ Starte: "${text.substring(0, 50)}..."`);
+
+            try {
+                // Start fetch request
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: voiceSelect.value,
+                        rate: rateSlider.value >= 0 ? `+${rateSlider.value}%` : `${rateSlider.value}%`,
+                        volume: volumeSlider.value >= 0 ? `+${volumeSlider.value}%` : `${volumeSlider.value}%`,
+                        pitch: pitchSlider.value >= 0 ? `+${pitchSlider.value}Hz` : `${pitchSlider.value}Hz`,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Initialize MediaSource AFTER successful response
+                mediaSource = new MediaSource();
+                const audio = new Audio();
+                audio.src = URL.createObjectURL(mediaSource);
+                
+                await new Promise((resolve) => {
+                    mediaSource.addEventListener('sourceopen', resolve);
+                });
+                
+                const mimeType = 'audio/mpeg';
+                if (!MediaSource.isTypeSupported(mimeType)) {
+                    throw new Error('MIME type not supported');
+                }
+                
+                sourceBuffer = mediaSource.addSourceBuffer(mimeType);
+                sourceBuffer.mode = 'sequence';
+
+                const reader = response.body.getReader();
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) break;
+
+                    audioChunks.push(value);
+                    totalBytes += value.length;
+
+                    // IMMEDIATELY append for instant playback!
+                    if (sourceBuffer && !sourceBuffer.updating) {
+                        try {
+                            sourceBuffer.appendBuffer(value);
+                            
+                            if (isFirstChunk) {
+                                isFirstChunk = false;
+                                const elapsed = ((Date.now() - startTime) / 1000).toFixed(3);
+                                addLog(`⚡ ERSTER CHUNK nach ${elapsed}ms (${value.length} bytes) - SPIELE SOFORT!`);
+                                statusEl.textContent = '🎵 Sofort-Wiedergabe läuft...';
+                                cacheStatusEl.textContent = 'Streaming...';
+                                
+                                setTimeout(() => {
+                                    audio.play().catch(e => console.error('Playback error:', e));
+                                }, 50);
+                            }
+                        } catch (e) {
+                            console.error('Buffer error:', e);
+                        }
+                    }
+
+                    // Update UI
+                    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                    durationEl.textContent = `${elapsed}s`;
+                    bytesEl.textContent = totalBytes.toLocaleString();
+
+                    if (audioChunks.length <= 5) {
+                        addLog(`📦 Chunk #${audioChunks.length}: ${value.length} bytes`);
+                    }
+                }
+
+                // Wait for appends
+                if (sourceBuffer && sourceBuffer.updating) {
+                    await new Promise(resolve => {
+                        sourceBuffer.addEventListener('updateend', resolve, { once: true });
+                    });
+                }
+
+                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                addLog(`✅ Fertig in ${duration}s (${totalBytes.toLocaleString()} bytes)`);
+                statusEl.textContent = '✅ Fertig';
+                cacheStatusEl.textContent = 'Abgeschlossen';
+
+                if (mediaSource && mediaSource.readyState === 'open') {
+                    mediaSource.endOfStream();
+                }
+
+            } catch (error) {
+                addLog(`❌ Fehler: ${error.message}`);
+                statusEl.textContent = '❌ Fehler';
+                cacheStatusEl.textContent = '--';
+                console.error('Error:', error);
+            } finally {
+                isPlaying = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (!isPlaying) return;
+            isPlaying = false;
+            playBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusEl.textContent = '⏹️ Gestoppt';
+            addLog('⏹️ Wiedergabe gestoppt');
+            
+            if (sourceBuffer && sourceBuffer.updating) {
+                sourceBuffer.abort();
+            }
+            if (mediaSource && mediaSource.readyState === 'open') {
+                mediaSource.endOfStream();
+            }
+        });
+    </script>
+</body>
+</html>
