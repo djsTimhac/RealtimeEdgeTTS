@@ -111,6 +111,45 @@ async def index_handler(request):
     return web.FileResponse('./demo.html')
 
 
+async def list_voices_handler(request):
+    """List all available voices grouped by language."""
+    try:
+        from edge_tts.voices import VoicesManager
+        
+        voices_manager = await VoicesManager.create()
+        all_voices = voices_manager.voices
+        
+        # Group voices by locale/language
+        voices_by_language = {}
+        for voice in all_voices:
+            locale = voice.get('Locale', 'Unknown')
+            if locale not in voices_by_language:
+                voices_by_language[locale] = []
+            
+            voices_by_language[locale].append({
+                'name': voice.get('ShortName', ''),
+                'gender': voice.get('Gender', ''),
+                'friendly_name': voice.get('FriendlyName', ''),
+            })
+        
+        # Sort languages
+        sorted_languages = dict(sorted(voices_by_language.items()))
+        
+        return web.json_response({
+            'success': True,
+            'languages': len(sorted_languages),
+            'total_voices': len(all_voices),
+            'voices': sorted_languages
+        })
+        
+    except Exception as e:
+        print(f"Error listing voices: {e}")
+        return web.json_response(
+            {'success': False, 'error': str(e)},
+            status=500
+        )
+
+
 def create_app():
     """Create and configure the web application."""
     app = web.Application()
@@ -118,6 +157,7 @@ def create_app():
     # Routes
     app.router.add_get('/', index_handler)
     app.router.add_post('/api/tts', tts_handler)
+    app.router.add_get('/api/voices', list_voices_handler)
     
     return app
 

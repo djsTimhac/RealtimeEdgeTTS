@@ -155,15 +155,19 @@
 
         <div class="section">
             <h3>🎤 Stimme</h3>
-            <select id="voice-select">
-                <option value="de-DE-ConradNeural">Deutsch - Conrad (Männlich)</option>
-                <option value="de-DE-KatjaNeural">Deutsch - Katja (Weiblich)</option>
-                <option value="de-DE-AmalaNeural">Deutsch - Amala (Weiblich)</option>
-                <option value="en-US-GuyNeural">English - Guy (Männlich)</option>
-                <option value="en-US-JennyNeural">English - Jenny (Weiblich)</option>
-                <option value="fr-FR-HenriNeural">Französisch - Henri (Männlich)</option>
-                <option value="es-ES-AlvaroNeural">Spanisch - Alvaro (Männlich)</option>
+            <label for="language-select">Sprache auswählen:</label>
+            <select id="language-select">
+                <option value="">-- Alle Sprachen --</option>
             </select>
+            
+            <label for="voice-select" style="margin-top: 15px;">Stimme auswählen:</label>
+            <select id="voice-select" disabled>
+                <option value="">-- Erst Sprache wählen --</option>
+            </select>
+            
+            <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                📊 <span id="voice-count">Lade Stimmen...</span>
+            </div>
         </div>
 
         <div class="section">
@@ -233,7 +237,9 @@
         let sourceBuffer = null;
 
         const textInput = document.getElementById('text-input');
+        const languageSelect = document.getElementById('language-select');
         const voiceSelect = document.getElementById('voice-select');
+        const voiceCountEl = document.getElementById('voice-count');
         const rateSlider = document.getElementById('rate');
         const volumeSlider = document.getElementById('volume');
         const pitchSlider = document.getElementById('pitch');
@@ -259,6 +265,14 @@
             document.getElementById('pitch-value').textContent = val;
         });
 
+        // Load voices on page load
+        loadVoices();
+
+        // Filter voices when language changes
+        languageSelect.addEventListener('change', () => {
+            filterVoicesByLanguage(languageSelect.value);
+        });
+
         function addLog(message) {
             const now = new Date();
             const timeStr = now.toISOString().substr(14, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0');
@@ -267,6 +281,85 @@
             entry.innerHTML = `<span class="log-time">[${timeStr}]</span>${message}`;
             logEl.appendChild(entry);
             logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // Load all available voices from server
+        async function loadVoices() {
+            try {
+                const response = await fetch('/api/voices');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const languages = Object.keys(data.voices);
+                    
+                    // Populate language dropdown
+                    languages.forEach(lang => {
+                        const option = document.createElement('option');
+                        option.value = lang;
+                        // Add flag emoji for common languages
+                        const flagMap = {
+                            'de-DE': '🇩🇪', 'en-US': '🇺🇸', 'en-GB': '🇬🇧',
+                            'fr-FR': '🇫🇷', 'es-ES': '🇪🇸', 'it-IT': '🇮🇹',
+                            'pt-BR': '🇧🇷', 'pt-PT': '🇵🇹', 'nl-NL': '🇳🇱',
+                            'pl-PL': '🇵🇱', 'ru-RU': '🇷🇺', 'ja-JP': '🇯🇵',
+                            'zh-CN': '🇨🇳', 'zh-TW': '🇹🇼', 'ko-KR': '🇰🇷',
+                            'ar-SA': '🇸🇦', 'hi-IN': '🇮🇳', 'tr-TR': '🇹🇷'
+                        };
+                        const flag = flagMap[lang] || '';
+                        option.textContent = `${flag} ${lang} (${data.voices[lang].length} Stimmen)`;
+                        languageSelect.appendChild(option);
+                    });
+                    
+                    voiceCountEl.textContent = `${data.total_voices} Stimmen aus ${data.languages} Sprachen geladen`;
+                    addLog(`✅ ${data.total_voices} Stimmen geladen (${data.languages} Sprachen)`);
+                } else {
+                    throw new Error(data.error || 'Failed to load voices');
+                }
+            } catch (error) {
+                console.error('Error loading voices:', error);
+                voiceCountEl.textContent = 'Fehler beim Laden';
+                addLog(`❌ Fehler beim Laden der Stimmen: ${error.message}`);
+            }
+        }
+
+        // Filter voices by selected language
+        let allVoicesByLanguage = {};
+        
+        async function filterVoicesByLanguage(language) {
+            if (!language) {
+                voiceSelect.disabled = true;
+                voiceSelect.innerHTML = '<option value="">-- Alle Sprachen --</option>';
+                return;
+            }
+            
+            // Load voices if not already loaded
+            if (Object.keys(allVoicesByLanguage).length === 0) {
+                try {
+                    const response = await fetch('/api/voices');
+                    const data = await response.json();
+                    if (data.success) {
+                        allVoicesByLanguage = data.voices;
+                    }
+                } catch (error) {
+                    console.error('Error fetching voices:', error);
+                    return;
+                }
+            }
+            
+            const voices = allVoicesByLanguage[language] || [];
+            
+            // Populate voice dropdown
+            voiceSelect.innerHTML = '<option value="">-- Stimme wählen --</option>';
+            voices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                const genderEmoji = voice.gender === 'Male' ? '👨' : '👩';
+                option.textContent = `${genderEmoji} ${voice.friendly_name || voice.name}`;
+                voiceSelect.appendChild(option);
+            });
+            
+            voiceSelect.disabled = false;
+            addLog(`📊 ${voices.length} Stimmen für ${language} verfügbar`);
         }
 
         playBtn.addEventListener('click', async () => {
@@ -291,13 +384,20 @@
             addLog(`▶️ Starte: "${text.substring(0, 50)}..."`);
 
             try {
+                // Validate voice selection
+                const selectedVoice = voiceSelect.value;
+                if (!selectedVoice) {
+                    alert('Bitte wähle eine Stimme aus!');
+                    return;
+                }
+                
                 // Start fetch request
                 const response = await fetch('/api/tts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         text: text,
-                        voice: voiceSelect.value,
+                        voice: selectedVoice,
                         rate: rateSlider.value >= 0 ? `+${rateSlider.value}%` : `${rateSlider.value}%`,
                         volume: volumeSlider.value >= 0 ? `+${volumeSlider.value}%` : `${volumeSlider.value}%`,
                         pitch: pitchSlider.value >= 0 ? `+${pitchSlider.value}Hz` : `${pitchSlider.value}Hz`,
