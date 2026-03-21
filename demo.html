@@ -349,9 +349,9 @@
                             if (isFirstChunk) {
                                 isFirstChunk = false;
                                 const elapsed = ((Date.now() - startTime) / 1000).toFixed(3);
-                                addLog(`⚡ ERSTER CHUNK nach ${elapsed}ms (${value.length} bytes) - SPIELE SOFORT!`);
-                                statusEl.textContent = '🎵 Sofort-Wiedergabe läuft...';
-                                cacheStatusEl.textContent = 'Streaming...';
+                                addLog(`⚡ ERSTER CHUNK nach ${elapsed}ms (${value.length} bytes) - EXTREME SPEED!`);
+                                statusEl.textContent = '🚀 EXTREME-Wiedergabe läuft...';
+                                cacheStatusEl.textContent = 'Streaming @ MAX...';
                                 
                                 setTimeout(() => {
                                     audio.play().catch(e => console.error('Playback error:', e));

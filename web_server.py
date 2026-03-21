@@ -24,17 +24,17 @@ async def tts_handler(request):
                 status=400
             )
         
-        # ULTRA-FAST with caching: Use minimal chunk size and aggressive timeouts
+        # EXTREME-PERFORMANCE: Maximum speed settings
         communicate = UltraFastCommunicate(
             text=text,
             voice=voice,
             rate=rate,
             volume=volume,
             pitch=pitch,
-            chunk_size=512,  # EVEN FASTER: 512 bytes for ultra-low latency!
-            connect_timeout=2,  # 2 seconds connection timeout
-            receive_timeout=10,  # 10 seconds receive timeout
-            use_cache=True,  # Enable caching!
+            chunk_size=256,  # EXTREME: 256 bytes for MAXIMUM speed!
+            connect_timeout=1,  # EXTREME: 1 second only!
+            receive_timeout=5,  # EXTREME: 5 seconds only!
+            use_cache=True,  # Enable intelligent caching
         )
         
         # Stream response
@@ -78,11 +78,15 @@ async def tts_handler(request):
                 if not first_chunk_sent:
                     first_chunk_sent = True
                     elapsed_ms = (time.time() - start_time) * 1000
-                    cache_status = "🟢 CACHED" if is_cached else "🔵 FRESH"
+                    cache_status = "⚡ CACHED" if is_cached else "🚀 FRESH"
                     print(f"⚡ {cache_status} Chunk #{chunk_count} sent in {elapsed_ms:.0f}ms ({len(chunk['data'])} bytes)")
-                elif chunk_count <= 3:
+                elif chunk_count <= 5:
                     elapsed_ms = (time.time() - start_time) * 1000
                     print(f"   Chunk #{chunk_count} @ {elapsed_ms:.0f}ms ({len(chunk['data'])} bytes)")
+                elif chunk_count % 20 == 0:
+                    elapsed_ms = (time.time() - start_time) * 1000
+                    throughput = total_bytes / (elapsed_ms/1000) / 1024
+                    print(f"⚡ Speed: {throughput:.1f} KB/s | Total: {total_bytes:,} bytes")
         
         await response.write_eof()
         
