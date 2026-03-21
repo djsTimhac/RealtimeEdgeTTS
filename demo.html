@@ -338,6 +338,12 @@
                     // IMMEDIATELY append for instant playback!
                     if (sourceBuffer && !sourceBuffer.updating) {
                         try {
+                            // Validate chunk before appending
+                            if (value.length === 0) {
+                                addLog('⚠️ Leerer Chunk übersprungen');
+                                continue;
+                            }
+                            
                             sourceBuffer.appendBuffer(value);
                             
                             if (isFirstChunk) {
@@ -353,6 +359,11 @@
                             }
                         } catch (e) {
                             console.error('Buffer error:', e);
+                            addLog(`⚠️ Buffer-Fehler: ${e.message}`);
+                            // Try to recover by aborting and restarting
+                            if (sourceBuffer.updating) {
+                                sourceBuffer.abort();
+                            }
                         }
                     }
 

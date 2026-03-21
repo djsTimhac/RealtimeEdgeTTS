@@ -115,8 +115,12 @@ class UltraFastCommunicate(Communicate):
             cached = _audio_cache.get(self.cache_key)
             if cached:
                 print("✅ Using cached audio (instant!)")
-                yield {"type": "audio", "data": cached, "cached": True}
-                return
+                # Validate cached data before using
+                if len(cached) > 0:
+                    yield {"type": "audio", "data": cached, "cached": True}
+                    return
+                else:
+                    print("⚠️ Cached data is empty, regenerating...")
         
         # Stream normally and cache the result
         print("🔄 Generating new audio...")
@@ -128,11 +132,15 @@ class UltraFastCommunicate(Communicate):
                 chunk['cached'] = False
             yield chunk
         
-        # Cache the complete audio
+        # Cache the complete audio only if we have valid data
         if self.use_cache and audio_chunks:
             complete_audio = b''.join(audio_chunks)
-            _audio_cache.set(self.cache_key, complete_audio)
-            print(f"💾 Cached {len(complete_audio):,} bytes")
+            # Only cache if we have substantial audio data (>1KB)
+            if len(complete_audio) > 1024:
+                _audio_cache.set(self.cache_key, complete_audio)
+                print(f"💾 Cached {len(complete_audio):,} bytes")
+            else:
+                print(f"⚠️ Skipping cache - audio too small: {len(complete_audio)} bytes")
 
 
 async def stream_and_play_instant(

@@ -61,6 +61,11 @@ async def tts_handler(request):
         
         async for chunk in communicate.stream_with_cache():
             if chunk['type'] == 'audio':
+                # Validate audio data before sending
+                if len(chunk['data']) == 0:
+                    print("⚠️ Warning: Received empty audio chunk, skipping")
+                    continue
+                    
                 await response.write(chunk['data'])
                 total_bytes += len(chunk['data'])
                 chunk_count += 1
