@@ -1,4 +1,4 @@
-"""ULTRA-FAST Realtime Edge TTS with instant streaming and caching."""
+"""Realtime Edge TTS - EXTREME-PERFORMANCE streaming with caching."""
 
 import asyncio
 import time
@@ -48,7 +48,7 @@ class AudioCache:
 _audio_cache = AudioCache(max_size=100)
 
 
-class UltraFastCommunicate(Communicate):
+class RealtimeCommunicate(Communicate):
     """
     EXTREME-PERFORMANCE version with maximum optimizations.
     
@@ -163,8 +163,9 @@ async def stream_and_play_instant(
 ) -> AsyncGenerator[Dict, None]:
     """
     Stream audio and start playback immediately when first chunk arrives.
+    Uses RealtimeCommunicate with EXTREME-PERFORMANCE.
     """
-    communicate = UltraFastCommunicate(
+    communicate = RealtimeCommunicate(
         text=text,
         voice=voice,
         rate=rate,

@@ -1,10 +1,10 @@
-"""Web server for Edge TTS demo with ULTRA-FAST instant streaming and caching."""
+"""Web server for Edge TTS demo with EXTREME-PERFORMANCE instant streaming and caching."""
 
 import asyncio
 import json
 import time
 from aiohttp import web
-from edge_tts.ultra_fast_stream import UltraFastCommunicate
+from edge_tts.realtime_stream import RealtimeCommunicate
 
 
 async def tts_handler(request):
@@ -25,7 +25,7 @@ async def tts_handler(request):
             )
         
         # EXTREME-PERFORMANCE: Maximum speed settings
-        communicate = UltraFastCommunicate(
+        communicate = RealtimeCommunicate(
             text=text,
             voice=voice,
             rate=rate,
